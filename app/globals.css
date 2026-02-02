@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+:root {
+  --mxp-purple: #7C5CFC;
+  --mxp-purple-light: #E8E3FF;
+  --mxp-purple-dark: #5B3FD9;
+  --mxp-green: #22C55E;
+  --mxp-green-light: #DCFCE7;
+  --mxp-orange: #F97316;
+  --mxp-orange-light: #FEF3C7;
+  --mxp-gray-50: #F9FAFB;
+  --mxp-gray-100: #F3F4F6;
+  --mxp-gray-200: #E5E7EB;
+  --mxp-gray-300: #D1D5DB;
+  --mxp-gray-400: #9CA3AF;
+  --mxp-gray-500: #6B7280;
+  --mxp-gray-600: #4B5563;
+  --mxp-gray-700: #374151;
+  --mxp-gray-800: #1F2937;
+  --mxp-gray-900: #111827;
+}
+
+@theme inline {
+  --color-mxp-purple: var(--mxp-purple);
+  --color-mxp-purple-light: var(--mxp-purple-light);
+  --color-mxp-purple-dark: var(--mxp-purple-dark);
+  --color-mxp-green: var(--mxp-green);
+  --color-mxp-green-light: var(--mxp-green-light);
+  --color-mxp-orange: var(--mxp-orange);
+  --color-mxp-orange-light: var(--mxp-orange-light);
+  --color-mxp-gray-50: var(--mxp-gray-50);
+  --color-mxp-gray-100: var(--mxp-gray-100);
+  --color-mxp-gray-200: var(--mxp-gray-200);
+  --color-mxp-gray-300: var(--mxp-gray-300);
+  --color-mxp-gray-400: var(--mxp-gray-400);
+  --color-mxp-gray-500: var(--mxp-gray-500);
+  --color-mxp-gray-600: var(--mxp-gray-600);
+  --color-mxp-gray-700: var(--mxp-gray-700);
+  --color-mxp-gray-800: var(--mxp-gray-800);
+  --color-mxp-gray-900: var(--mxp-gray-900);
+}
+
+body {
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: var(--mxp-gray-50);
+  color: var(--mxp-gray-800);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--mxp-gray-100);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--mxp-gray-300);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--mxp-gray-400);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease forwards;
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--mxp-gray-200) 25%, var(--mxp-gray-100) 50%, var(--mxp-gray-200) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}

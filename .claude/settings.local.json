@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(unzip:*)",
+      "Bash(npm --prefix /Users/ethan/Dev/mixpeek/demo-apps/creative-match install)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git -C /Users/ethan/Dev/mixpeek/demo-apps/creative-match add -A)",
+      "Bash(git -C /Users/ethan/Dev/mixpeek/demo-apps/creative-match commit -m \"Initial commit: MXP Brand Demo\")"
+    ]
+  }
+}
