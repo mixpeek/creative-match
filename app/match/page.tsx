@@ -3,9 +3,16 @@
 import { useState } from 'react';
 import { Card, Badge, Button, Thumbnail, ScoreBadge } from '@/components/ui';
 import { mockOffers, mockMatchResults } from '@/lib/mock-data';
-import { Copy, ChevronDown, Check } from 'lucide-react';
+import { Copy, ChevronDown, Check, Download, RefreshCw } from 'lucide-react';
 
 type ExportFormat = 'csv' | 'json' | 'prebid';
+
+interface AdvancedFilters {
+  platform: string;
+  aspectRatio: string;
+  duration: string;
+  brandSafety: string;
+}
 
 export default function MatchExportPage() {
   const [contextInput, setContextInput] = useState('');
@@ -14,33 +21,55 @@ export default function MatchExportPage() {
   const [hasMatched, setHasMatched] = useState(true);
   const [activeExport, setActiveExport] = useState<ExportFormat>('csv');
   const [copied, setCopied] = useState(false);
+  const [isMatching, setIsMatching] = useState(false);
+  const [exported, setExported] = useState(false);
+  const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>({
+    platform: 'Any',
+    aspectRatio: 'Any',
+    duration: 'Any',
+    brandSafety: 'Required',
+  });
 
   const selectedOffer = mockOffers.find((o) => o.id === selectedOfferId);
 
-  const csvOutput = `offer_id,creative_id,score,rationale
-offer_auto_quote,creative_1032,92.0,"savings"
-offer_auto_quote,creative_1033,89.0,"quick quote"
-offer_auto_quote,creative_1034,86.0,"discount"`;
+  const getExportData = () => {
+    const offerId = selectedOfferId || 'offer_auto_quote';
+    const contextSummary = contextInput || 'DIY/home improvement content';
 
-  const jsonOutput = JSON.stringify({
-    offer_id: "offer_auto_quote",
-    creatives: [
-      { id: "creative_1032", score: 92.0 },
-      { id: "creative_1033", score: 89.0 },
-      { id: "creative_1034", score: 86.0 }
-    ],
-    constraints: { platform: "any", aspect_ratio: "9:16" },
-    context_summary: "DIY/home improvement content"
-  }, null, 2);
+    const csvOutput = `offer_id,creative_id,score,rationale
+${offerId},creative_1032,92.0,"savings"
+${offerId},creative_1033,89.0,"quick quote"
+${offerId},creative_1034,86.0,"discount"`;
 
-  const prebidOutput = JSON.stringify({
-    name: "mixpeek",
-    params: {
-      offer_id: "offer_auto_quote",
-      creatives: ["creative_1032", "creative_1033"],
-      brand_safety: true
-    }
-  }, null, 2);
+    const jsonOutput = JSON.stringify({
+      offer_id: offerId,
+      creatives: [
+        { id: "creative_1032", score: 92.0, rationale: "savings messaging" },
+        { id: "creative_1033", score: 89.0, rationale: "quick quote CTA" },
+        { id: "creative_1034", score: 86.0, rationale: "discount theme" }
+      ],
+      constraints: {
+        platform: advancedFilters.platform.toLowerCase(),
+        aspect_ratio: advancedFilters.aspectRatio,
+        duration: advancedFilters.duration,
+        brand_safety: advancedFilters.brandSafety === 'Required'
+      },
+      context_summary: contextSummary
+    }, null, 2);
+
+    const prebidOutput = JSON.stringify({
+      name: "mixpeek",
+      params: {
+        offer_id: offerId,
+        creatives: ["creative_1032", "creative_1033"],
+        brand_safety: advancedFilters.brandSafety === 'Required'
+      }
+    }, null, 2);
+
+    return { csv: csvOutput, json: jsonOutput, prebid: prebidOutput };
+  };
+
+  const { csv: csvOutput, json: jsonOutput, prebid: prebidOutput } = getExportData();
 
   const handleCopy = () => {
     const outputs = { csv: csvOutput, json: jsonOutput, prebid: prebidOutput };
@@ -49,8 +78,46 @@ offer_auto_quote,creative_1034,86.0,"discount"`;
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleExport = () => {
+    const outputs = { csv: csvOutput, json: jsonOutput, prebid: prebidOutput };
+    const extensions = { csv: 'csv', json: 'json', prebid: 'json' };
+    const mimeTypes = { csv: 'text/csv', json: 'application/json', prebid: 'application/json' };
+
+    const content = outputs[activeExport];
+    const blob = new Blob([content], { type: mimeTypes[activeExport] });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `creative_match_export_${selectedOfferId}.${extensions[activeExport]}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    setExported(true);
+    setTimeout(() => setExported(false), 2000);
+  };
+
   const runMatch = () => {
-    setHasMatched(true);
+    setIsMatching(true);
+    // Simulate matching process
+    setTimeout(() => {
+      setHasMatched(true);
+      setIsMatching(false);
+    }, 800);
+  };
+
+  const handleNewMatch = () => {
+    setContextInput('');
+    setSelectedOfferId(mockOffers[0].id);
+    setHasMatched(false);
+    setShowAdvanced(false);
+    setAdvancedFilters({
+      platform: 'Any',
+      aspectRatio: 'Any',
+      duration: 'Any',
+      brandSafety: 'Required',
+    });
   };
 
   return (
@@ -99,8 +166,15 @@ offer_auto_quote,creative_1034,86.0,"discount"`;
           </div>
 
           {/* Match button */}
-          <Button variant="primary" onClick={runMatch}>
-            Match
+          <Button variant="primary" onClick={runMatch} disabled={isMatching}>
+            {isMatching ? (
+              <>
+                <RefreshCw className="w-4 h-4 mr-1 animate-spin" />
+                Matching...
+              </>
+            ) : (
+              'Match'
+            )}
           </Button>
         </div>
 
@@ -121,7 +195,11 @@ offer_auto_quote,creative_1034,86.0,"discount"`;
               <label className="block text-xs text-[var(--mxp-gray-500)] mb-1">
                 Platform
               </label>
-              <select className="w-full px-3 py-1.5 text-sm border border-[var(--mxp-gray-200)] rounded-lg bg-white">
+              <select
+                value={advancedFilters.platform}
+                onChange={(e) => setAdvancedFilters((prev) => ({ ...prev, platform: e.target.value }))}
+                className="w-full px-3 py-1.5 text-sm border border-[var(--mxp-gray-200)] rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[var(--mxp-purple)] focus:ring-opacity-20"
+              >
                 <option>Any</option>
                 <option>Meta</option>
                 <option>Google</option>
@@ -132,7 +210,11 @@ offer_auto_quote,creative_1034,86.0,"discount"`;
               <label className="block text-xs text-[var(--mxp-gray-500)] mb-1">
                 Aspect ratio
               </label>
-              <select className="w-full px-3 py-1.5 text-sm border border-[var(--mxp-gray-200)] rounded-lg bg-white">
+              <select
+                value={advancedFilters.aspectRatio}
+                onChange={(e) => setAdvancedFilters((prev) => ({ ...prev, aspectRatio: e.target.value }))}
+                className="w-full px-3 py-1.5 text-sm border border-[var(--mxp-gray-200)] rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[var(--mxp-purple)] focus:ring-opacity-20"
+              >
                 <option>Any</option>
                 <option>9:16</option>
                 <option>16:9</option>
@@ -143,7 +225,11 @@ offer_auto_quote,creative_1034,86.0,"discount"`;
               <label className="block text-xs text-[var(--mxp-gray-500)] mb-1">
                 Duration
               </label>
-              <select className="w-full px-3 py-1.5 text-sm border border-[var(--mxp-gray-200)] rounded-lg bg-white">
+              <select
+                value={advancedFilters.duration}
+                onChange={(e) => setAdvancedFilters((prev) => ({ ...prev, duration: e.target.value }))}
+                className="w-full px-3 py-1.5 text-sm border border-[var(--mxp-gray-200)] rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[var(--mxp-purple)] focus:ring-opacity-20"
+              >
                 <option>Any</option>
                 <option>&lt;15s</option>
                 <option>15-30s</option>
@@ -154,7 +240,11 @@ offer_auto_quote,creative_1034,86.0,"discount"`;
               <label className="block text-xs text-[var(--mxp-gray-500)] mb-1">
                 Brand safety
               </label>
-              <select className="w-full px-3 py-1.5 text-sm border border-[var(--mxp-gray-200)] rounded-lg bg-white">
+              <select
+                value={advancedFilters.brandSafety}
+                onChange={(e) => setAdvancedFilters((prev) => ({ ...prev, brandSafety: e.target.value }))}
+                className="w-full px-3 py-1.5 text-sm border border-[var(--mxp-gray-200)] rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[var(--mxp-purple)] focus:ring-opacity-20"
+              >
                 <option>Required</option>
                 <option>Optional</option>
               </select>
@@ -274,8 +364,18 @@ offer_auto_quote,creative_1034,86.0,"discount"`;
                   </>
                 )}
               </Button>
-              <Button variant="primary" className="flex-1">
-                Export
+              <Button variant="primary" className="flex-1" onClick={handleExport}>
+                {exported ? (
+                  <>
+                    <Check className="w-4 h-4 mr-1" />
+                    Exported!
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4 mr-1" />
+                    Export
+                  </>
+                )}
               </Button>
             </div>
           </Card>
@@ -284,8 +384,14 @@ offer_auto_quote,creative_1034,86.0,"discount"`;
 
       {/* Bottom CTAs */}
       <div className="flex justify-between mt-6">
-        <Button variant="secondary">New match</Button>
-        <Button variant="primary">Export</Button>
+        <Button variant="secondary" onClick={handleNewMatch}>
+          <RefreshCw className="w-4 h-4 mr-1" />
+          New match
+        </Button>
+        <Button variant="primary" onClick={handleExport}>
+          <Download className="w-4 h-4 mr-1" />
+          Export
+        </Button>
       </div>
     </div>
   );
